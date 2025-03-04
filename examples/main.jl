@@ -26,7 +26,7 @@ println("Welcome in main.")
 # Warnings: 
 # Some error plots may be empty if the error is of machine precision
 # In particular for the demo examples...
-# The first run takes longer
+# The first run takes longer.
 
 #####################################################
 # Parameters 
