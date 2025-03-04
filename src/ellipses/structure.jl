@@ -16,7 +16,6 @@ export EPoint
     expgamma::Float64
 
     function EPoint(alpha::Float64, beta::Float64, gamma::Float64)
-        # println("first constructor, called with ", alpha, ", ", beta, ", ", gamma)
         coshfrac = cosh(beta / (2*sqrt(2)))
         sinhfrac = sinh(beta / (2*sqrt(2)))
         expalpha = exp(alpha)
@@ -28,26 +27,20 @@ export EPoint
     end
 
     function EPoint(A::Vector{Float64}) 
-        # println("second constructor")
         beta = sqrt(2.0) * atanh(2.0 * A[2] / (A[1] + A[3]))
         coshfrac = cosh(beta / (2*sqrt(2)))
         sinhfrac = sinh(beta / (2*sqrt(2)))
         expalpha = (A[1] * coshfrac^2 - A[3] * sinhfrac^2) / (coshfrac^4 - sinhfrac^4)
         expgamma = (A[3] * coshfrac^2 - A[1] * sinhfrac^2) / (coshfrac^4 - sinhfrac^4)
-        # if any(abs.([beta, coshfrac, sinhfrac, expalpha, expgamma]) .>= 1e4)
-        #     println("beta : ", beta, ", expalpha : ", expalpha, ", expgamma : ", expgamma)
-        # end
         new(A[1], A[2], A[3], A[1]*A[3]-A[2]^2, log(expalpha), beta, log(expgamma), expalpha, coshfrac, sinhfrac, expgamma)
     end
 
     function EPoint(A::Matrix{Float64}) 
-        # println("third constructor")
         return EPoint([A[1,1], A[1,2], A[2,2]])
     end
 end
 Base.:(==)(p1::EPoint, p2::EPoint) = (p1.c11 == p2.c11) && (p1.c12 == p2.c12) && (p1.c22 == p2.c22) && (p1.det == p2.det)
 Base.:(+)(p1::EPoint, p2::EPoint) = EPoint([p1.c11+p2.c11, p1.c12+p2.c12, p1.c22+p2.c22])
-# Base.:(*)(l::Float64, p::Epoint)
 
 export Ellipses 
 """

@@ -4,27 +4,50 @@ using DocStringExtensions
 using ProgressBars
 using Plots
 using DelimitedFiles
+using JLD2
 
 include("testcases.jl")
 include("visualisation.jl")
 
 println("Welcome in main.")
 
+# To the passerby: 
+# This is the full code used in our work on CAT(0) spaces. 
+# Feel free to look at it: if you are actually interested into running it (who knows), 
+# you may prefer to start with the demo test cases.
+
+# How to run it: 
+# uncomment the testcaseid that you want 
+# in the REPL: 
+#   ] activate .
+#   using FLagHada
+#   include("examples/main.jl") 
+
+# Warnings: 
+# Some error plots may be empty if the error is of machine precision
+# The first run takes longer
+
 #####################################################
 # Parameters 
 #####################################################
 
-VSL = true 
-uSL = true
+VSL = true # semi-lagrangian on the value function 
+uSL = true # compute errors on the controls as well
 save_errors = true
 save_values = true
 create_pics = true
+
+### Demo test cases (should run in reasonable time)
+
+testcaseid = "demo_network" 
+# testcaseid = "demo_ellipses"
+# testcaseid = "demo_gluing"
 
 ### Networks
 
 # testcaseid = "eikonale_tripod"
 # testcaseid = "eikonale_intricate"
-testcaseid = "sncf_intricate"
+# testcaseid = "sncf_intricate"
 # testcaseid = "tripod_chattering"
 
 ### Ellipses 
@@ -32,7 +55,6 @@ testcaseid = "sncf_intricate"
 # testcaseid = "eikonale_ellcube"
 # testcaseid = "eikonale_ellplane"
 # testcaseid = "robustHam" # A(u) = [u 0; 0 -u], u ∈ {-1,1}
-# testcaseid = "robustRot" # A(u) = [0 1; u 0], u ∈ {-1,0,1} 
 
 ### Gluings
 
@@ -44,12 +66,14 @@ testcaseid = "sncf_intricate"
 
 verbose = true
 
-picruns = [1,20,50,100]
+# index at which we make pictures
+picruns = [1,2,3,4,5] # for demos
+# picruns = [1,20,50,100] 
 # picruns = [1]
 # pictype = "value"
 # pictype = "feedback"
 # pictype = "opttraj"
-pictype = ["value", "feedback"]
+pictype = ["value", "feedback"] # can be "value", "feedback" and "opttraj". !! No guarantee to be implemented, check it yourself
 
 #####################################################
 # Initialization 
@@ -61,6 +85,7 @@ if testcase.domaintype == "network"
     domain, plotter = get_network_and_plotter(testcase.domainid)
 elseif testcase.domaintype == "ellipses"
     domain = get_ellipses(testcase.domainid, verbose)
+    plotter = "not used"
 elseif testcase.domaintype == "gluing"
     domain = get_gluing(testcase.domainid, verbose)
     plotter = get_gluing_plotter(testcase.domainid, verbose)
@@ -102,16 +127,10 @@ for (iN,(N,dx)) in enumerate(zip(testcase.NN, testcase.dxs))
         verb(verbose, "... done.")
     end 
 
-    ##########################
-    # SemiLag part
-    ##########################
-
     if VSL 
 
         if testcase.scheme == "SL"
             testcase.exec_time[iN] = @elapsed hatVV = semiLag(domain, dynamic, terminalcost, testcase.T, N, mesh, verbose)
-        elseif testcase.scheme == "SLinterp"
-            testcase.exec_time[iN] = @elapsed hatVV = semiLagInterp(domain, dynamic, terminalcost, testcase.T, N, mesh, verbose)
         else
             throw(ErrorException("unknown method $(testcase.method)"))
         end
@@ -122,8 +141,6 @@ for (iN,(N,dx)) in enumerate(zip(testcase.NN, testcase.dxs))
                 function hatV(t::Float64, x::Point)
                     tn = 1+round(Int64, N*t/testcase.T)
                     ix = search_in_mesh(domain, mesh, x)
-                    # println("ix : ", ix)
-                    # println("At time $tn, choosing ", pt_to_str(mesh.points[ix]))
                     return hatVV[ix,tn]
                 end
             
@@ -137,33 +154,8 @@ for (iN,(N,dx)) in enumerate(zip(testcase.NN, testcase.dxs))
             @views testcase.errorVSL_glob[iN] = maximum(abs.(hatVV .- VV)) / maximum(abs.(VV))
             @views testcase.errorVSL_init[iN] = maximum(abs.(hatVV[:,1] .- VV[:,1])) / maximum(abs.(VV[:,1]))
             verb(verbose, "Errors on V: global ", testcase.errorVSL_glob[iN], ", initial ", testcase.errorVSL_init[iN])
-
-            # tmax = argmax([maximum(abs.(hatVV[:,tn] .- VV[:,tn])) for tn in 1:N])
-            # println("Time of the maximal error : $tmax / $N")
-
             verb(verbose, "... done.")
         end
-
-        # if mesh.npoints <= 1000
-        #     submesh = collect(1:mesh.npoints)
-        # else
-        #     submesh = mesh.juncind ∪ collect(1:round(Int,mesh.npoints/1000):mesh.npoints) 
-        #     verb(verbose, "Plotting on a submesh of ", length(submesh), " points")
-        # end
-        # # tmax = 1
-        # p = plot_function(domain, plotter, mesh, hatVV[:,tmax], submesh, verbose)
-        # p = plot_function(domain, plotter, mesh, VV[:,tmax], submesh, verbose)
-        # p = plot_function(domain, plotter, mesh, hatVV[:,tmax] .- VV[:,tmax], submesh, verbose)
-        # display(p)
-        # display(plot(p,q,layout=[1,1]))
-
-        # p = plot_gluing(domain, plotter)
-        # q = plot_gluing(domain, plotter)
-        # plot_values!(p, domain, plotter, mesh, hatVV[:,tmax], 1.5)
-        # plot_values!(q, domain, plotter, mesh, VV[:,tmax], 1.5, true)
-        # plot_values!(p, domain, plotter, mesh, hatVV[:,tmax] .- VV[:,tmax], 1.5)
-        # display(p)
-        # display(plot(p,q,layout=[1,1]))
 
         if create_pics && iN ∈ picruns
             create_and_save_pics(testcase, testcaseid, foldername, domain, plotter, dynamic, mesh, hatVV, hatV, pictype, iN, N, dx, verbose)

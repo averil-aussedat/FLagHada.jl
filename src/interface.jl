@@ -1,7 +1,6 @@
 using LinearAlgebra
 using Plots
 using Polynomials
-using LinRegOutliers
 using Colors
 
 export verb
@@ -44,7 +43,7 @@ function plot_errors(listeh::Vector{Float64}, errors::VecOrMat{Float64}, names::
     abserr[abserr .<= 1e-14] .= 1e-14
     for i=1:length(errors[1,:])
         if (maximum(abserr[:,i]) < 1e-10)
-            println("[$fname] Skipping series $i, identically null")
+            verb(verbose, "Skipping series $i, identically null")
         else
             poly = fit(log10.(listeh), log10.(abserr[:,i]), 1)
             plot!(p, listeh, abserr[:,i], shape=mk[i], ls=:solid, lc=col[i], mc=col[i], lw=1.0, label=names[i])
@@ -57,62 +56,63 @@ function plot_errors(listeh::Vector{Float64}, errors::VecOrMat{Float64}, names::
     return p
 end
 
-export plot_errors_robust
-"""
-$(SIGNATURES)
+# needs LinRegOutliers
+# export plot_errors_robust
+# """
+# $(SIGNATURES)
 
-Robust loglog display of series of errors.
-- listeh : vector of steps 
-- errors : series to plot. One colums = one series
-- names : vector of tags
+# Robust loglog display of series of errors.
+# - listeh : vector of steps 
+# - errors : series to plot. One colums = one series
+# - names : vector of tags
 
-"""
-function plot_errors_robust(listeh::Vector{Float64}, errors::VecOrMat{Float64}, names::Vector{String}, verbose::Bool=false)
-    verb(verbose, "Creating error plot... ")
+# """
+# function plot_errors_robust(listeh::Vector{Float64}, errors::VecOrMat{Float64}, names::Vector{String}, verbose::Bool=false)
+#     verb(verbose, "Creating error plot... ")
 
-    xticks = 10 .^(round.(LinRange(minimum(log10.(listeh)),maximum(log10.(listeh)),5),digits=2))
-    p = plot(xaxis=:log, yaxis=:log, xlabel="step", ylabel="error", legend=:outerbottom, xticks=xticks)
-    abserr = abs.(errors) # 2e, 3e, 4e, 5e, 
-    col1 = ["#6ACCBC", "#4073FF", "#FF9933", "#B8255F", "#D5E04C"]
-    col2 = ["#2B9483", "#4A1167", "#A7611B", "#61092C", "#7F8813"]
-    mk = [:circle, :diamond, :xcross, :star5, :rect, :ltriangle, :pentagon]
-    abserr[abserr .<= 1e-14] .= 1e-14
-    for i=1:length(errors[1,:])
-        if (maximum(abserr[:,i]) < 1e-10)
-            verb(verbose, "Skipping series $i, identically null")
-        else
-            # outliers-robust linear regression. Doc https://github.com/jbytecode/LinRegOutliers/blob/master/examples.md
-            reg = createRegressionSetting(@formula(le ~ lh), DataFrame((lh = log10.(listeh), le=log10.(abserr[:,i]))))
-            thelts = lts(reg)
-            poly = thelts["betas"]
-            poly_approx = 10 .^(poly[2] .* log10.(listeh) .+ poly[1])
+#     xticks = 10 .^(round.(LinRange(minimum(log10.(listeh)),maximum(log10.(listeh)),5),digits=2))
+#     p = plot(xaxis=:log, yaxis=:log, xlabel="step", ylabel="error", legend=:outerbottom, xticks=xticks)
+#     abserr = abs.(errors) # 2e, 3e, 4e, 5e, 
+#     col1 = ["#6ACCBC", "#4073FF", "#FF9933", "#B8255F", "#D5E04C"]
+#     col2 = ["#2B9483", "#4A1167", "#A7611B", "#61092C", "#7F8813"]
+#     mk = [:circle, :diamond, :xcross, :star5, :rect, :ltriangle, :pentagon]
+#     abserr[abserr .<= 1e-14] .= 1e-14
+#     for i=1:length(errors[1,:])
+#         if (maximum(abserr[:,i]) < 1e-10)
+#             verb(verbose, "Skipping series $i, identically null")
+#         else
+#             # outliers-robust linear regression. Doc https://github.com/jbytecode/LinRegOutliers/blob/master/examples.md
+#             reg = createRegressionSetting(@formula(le ~ lh), DataFrame((lh = log10.(listeh), le=log10.(abserr[:,i]))))
+#             thelts = lts(reg)
+#             poly = thelts["betas"]
+#             poly_approx = 10 .^(poly[2] .* log10.(listeh) .+ poly[1])
 
-            # if outliers are those who do not fit the window of the regression 
-            # extension = maximum(poly_approx) - minimum(poly_approx)
-            # topline    = maximum(poly_approx) + 0.3 * extension
-            # bottomline = minimum(poly_approx) - 0.3 * extension
-            # inliers = [j for j in 1:length(listeh) if bottomline <= abserr[j,i] <= topline]
-            # outliers= [j for j in 1:length(listeh) if j ∉ inliers]
+#             # if outliers are those who do not fit the window of the regression 
+#             # extension = maximum(poly_approx) - minimum(poly_approx)
+#             # topline    = maximum(poly_approx) + 0.3 * extension
+#             # bottomline = minimum(poly_approx) - 0.3 * extension
+#             # inliers = [j for j in 1:length(listeh) if bottomline <= abserr[j,i] <= topline]
+#             # outliers= [j for j in 1:length(listeh) if j ∉ inliers]
             
-            outliers = thelts["outliers"]
-            inliers = [j for j in 1:length(listeh) if !(j in outliers)]
-            bottomline = minimum(abserr[inliers,i])
+#             outliers = thelts["outliers"]
+#             inliers = [j for j in 1:length(listeh) if !(j in outliers)]
+#             bottomline = minimum(abserr[inliers,i])
 
-            # println("inliers : ", inliers)
-            # println("outliers : ", outliers)
+#             # println("inliers : ", inliers)
+#             # println("outliers : ", outliers)
 
-            scatter!(p, listeh[inliers], abserr[inliers,i], shape=mk[i], ls=:solid, lc=col1[i], mc=col1[i], msc=col2[i], lw=1.0, label=names[i], ms=3)
-            plot!(p, listeh[inliers], poly_approx[inliers], ls=:dash, lc=col2[i], mc=col2[i], lw=2.0, label="a = " * "$(poly[2])"[1:min(end,5)]) # shape=mk[i], , ms=2
-            if length(outliers) > 0
-                verb(verbose, "Plotting ", length(outliers), " outlier" * "s"^(length(outliers) > 1) * " on series $i")
-                scatter!(p, listeh[outliers], fill(bottomline,length(outliers)), shape=mk[i], mc="red", msc="darkred", lw=1.0, ms=3, label=:none)
-            end
-        end
-    end
+#             scatter!(p, listeh[inliers], abserr[inliers,i], shape=mk[i], ls=:solid, lc=col1[i], mc=col1[i], msc=col2[i], lw=1.0, label=names[i], ms=3)
+#             plot!(p, listeh[inliers], poly_approx[inliers], ls=:dash, lc=col2[i], mc=col2[i], lw=2.0, label="a = " * "$(poly[2])"[1:min(end,5)]) # shape=mk[i], , ms=2
+#             if length(outliers) > 0
+#                 verb(verbose, "Plotting ", length(outliers), " outlier" * "s"^(length(outliers) > 1) * " on series $i")
+#                 scatter!(p, listeh[outliers], fill(bottomline,length(outliers)), shape=mk[i], mc="red", msc="darkred", lw=1.0, ms=3, label=:none)
+#             end
+#         end
+#     end
 
-    verb(verbose, "... done.")
-    return p
-end
+#     verb(verbose, "... done.")
+#     return p
+# end
 
 # inspired from https://discourse.julialang.org/t/quiver-plot-arrowhead-sizing/81789/4
 # as multiplies the branches of the arrow head 

@@ -9,8 +9,7 @@ function get_ellipses(id::String, verbose::Bool=false)
         domain = Ellipses(id, 1.0, 0.0, false)
 
     elseif (id == "ellctedet")
-        # domain = Ellipses(id, 1.0, 1.0, true) # before correct boundary conditions
-        domain = Ellipses(id, 1.5, sqrt(2)*1.5, true) # after correct boundary conditions
+        domain = Ellipses(id, 1.5, sqrt(2)*1.5, true) 
 
     else
         throw(ErrorException("unknown domain id '$id'"))
@@ -38,9 +37,7 @@ function get_Scalar(id::String, domain::Ellipses, verbose::Bool=false)
 
     elseif (id == "eigmax")
 
-        # res = MathFunction{Scalar}(id, x::EPoint -> (x.c11+x.c22)/2 + sqrt(abs((x.c11+x.c22)^2/4 - x.det)))
         res = MathFunction{Scalar}(id, x::EPoint -> min(2.0, (x.c11+x.c22)/2 + sqrt(abs((x.c11+x.c22)^2/4 - x.det))))
-        # res = MathFunction{Scalar}(id, x::EPoint -> min(2.0, (x.c11+x.c22)/2 + sqrt(abs((x.c11+x.c22)^2/4 - x.det))))
 
     else
         throw(ErrorException("unknown scalar id '$id'"))
@@ -61,17 +58,14 @@ function get_Dynamic(id::String, domain::Ellipses, verbose::Bool=false)
             x::EPoint -> [
                 Velocity(EPoint(x.alpha+2*domain.alga,x.beta,x.gamma), 1.0, 1.0),
                 Velocity(EPoint(x.alpha-2*domain.alga,x.beta,x.gamma), 1.0, 1.0),
-                # Velocity(EPoint(x.alpha,x.beta+2*domain.beta,x.gamma), 1.0, 1.0),
-                # Velocity(EPoint(x.alpha,x.beta-2*domain.beta,x.gamma), 1.0, 1.0),
                 Velocity(EPoint(x.alpha,x.beta,x.gamma+2*domain.alga), 1.0, 1.0),
                 Velocity(EPoint(x.alpha,x.beta,x.gamma-2*domain.alga), 1.0, 1.0),
-                # #
+                # 
                 Velocity(EPoint(x.alpha+2*domain.alga,x.beta,x.gamma+2*domain.alga), 1.0, 1.0),
                 Velocity(EPoint(x.alpha+2*domain.alga,x.beta,x.gamma-2*domain.alga), 1.0, 1.0),
                 Velocity(EPoint(x.alpha-2*domain.alga,x.beta,x.gamma+2*domain.alga), 1.0, 1.0),
                 Velocity(EPoint(x.alpha-2*domain.alga,x.beta,x.gamma-2*domain.alga), 1.0, 1.0),
                 # 
-                # Velocity(EPoint(0.0,0.0,0.0), 1.0),
             ]
         )
 
@@ -131,7 +125,6 @@ function get_Dynamic(id::String, domain::Ellipses, verbose::Bool=false)
             normVis = [
                 sqrt(Vi[1,1]^2 + 2*Vi[1,2]^2 + Vi[2,2]^2) for Vi in Vis
             ]
-            # println("norm Vis >= ", minimum(normVis))
             return [
                 Velocity(EPoint(sqrtx * exp(2.0 * Vi / (normVi + 1.0*(normVi <= 1e-7))) * sqrtx), normVi, 1.0) for (Vi,normVi) in zip(Vis,normVis)
             ]
@@ -152,16 +145,6 @@ function get_Dynamic(id::String, domain::Ellipses, verbose::Bool=false)
         """
         function robustRotcall(x::EPoint)
             sqrtx = sqrt([x.c11 x.c12; x.c12 x.c22])
-            # normR = sqrt(2.0 * ((x.c11+x.c22)^2 / x.det - 4.0)) # trace of the square of the rotating velocity, for u = -1
-            # norm0 = sqrt(2.0 * (x.c11+x.c22)^2 / x.det) # trace of the square of the velocity for u = 0
-            # Mu1 = 1/sqrt(x.det) * [2*sqrtx[1,2]*(sqrtx[2,2]-sqrtx[1,1])   sqrtx[1,1]^2+sqrtx[2,2]^2-2*sqrtx[1,2]^2;
-            #                        sqrtx[1,1]^2+sqrtx[2,2]^2-2*sqrtx[1,2]^2   2*sqrtx[1,2]*(sqrtx[1,1]-sqrtx[2,2])]
-            # norm1 = sqrt(Mu1[1,1]^2 + 2*Mu1[1,2]^2 + Mu1[2,2]^2) # root of the trace of the square
-            # return [
-            #     Velocity(EPoint(sqrtx * exp(1.0 / sqrt(x.det) .* [-2*x.c12  x.c11-x.c22; x.c11-x.c22 2*x.c12]) * sqrtx), normR, 1.0), 
-            #     Velocity(EPoint(exp(1/sqrt(x.det) .* [2*sqrtx[1,1]*sqrtx[1,2] sqrtx[1,1]^2 - sqrtx[1,2]^2; sqrtx[1,1]^2 - sqrtx[1,2]^2 2*sqrtx[1,1]*sqrtx[1,2]])), norm0, 1.0),
-            #     Velocity(EPoint(exp(Mu1)), norm1, 1.0)
-            # ]
 
             # very basic 
             isqrtx = inv(sqrtx)
@@ -224,32 +207,13 @@ function get_Analytical(domain::Ellipses, dynamicid::String, costid::String, T::
         if probe 
             return true 
         else
-            # # incomplete, for u ∈ {-1,1}
-            # function rHamCall(t::Float64, x::EPoint)
-            #     tswitch = min(T-t, max(0.0, -x.beta/(2.0*sqrt(2.0))))
-            #     trace = (x.c11+x.c22)*cosh(2*tswitch) + 2.0*x.c12*sinh(2*tswitch)
-            #     return min(2.0, trace/2.0 + sqrt(abs(trace^2/4.0 - x.det))) 
-            # end
-
-            # function rHamCall(t::Float64, x::EPoint)
-            #     tswitch = min(T-t, max(0.0, -2.0*x.c12/x.c11))
-            #     trace = x.c11+x.c22 + 2*tswitch*x.c12 + tswitch^2 * x.c11
-            #     return min(2.0, trace/2.0 + sqrt(abs(trace^2/4.0 - x.det))) 
-            # end
-
             function rHamCall(t::Float64, x::EPoint)
                 tswitch = min(T-t, 0.25 * log(max(x.c11,x.c22) / min(x.c11,x.c22)))
                 trace = exp(-2.0*tswitch) * max(x.c11,x.c22) + exp(2.0*tswitch) * min(x.c11,x.c22)
-                # return min(1.2, trace/2.0 + sqrt(abs((trace^2)/4.0 - x.det)))
                 return min(2.0, trace/2.0 + sqrt(abs((trace^2)/4.0 - x.det)))
             end
 
-            # function rHamCall(t::Float64, x::EPoint)
-            #     trace = exp(-2.0*(T-t)) * x.c11 + exp(2.0*(T-t)) * x.c22
-            #     return min(2.0, trace/2.0 + sqrt(abs((trace^2)/4.0 - x.det)))
-            # end
             res = MathFunction{Scalar}(id, rHamCall)
-            # res = MathFunction{Scalar}(id, (t::Float64, x::EPoint) -> min(2.0, (x.c11+x.c22)/2.0 + sqrt(abs((x.c11+x.c22)^2/4.0 - x.det))))
         end
         
 

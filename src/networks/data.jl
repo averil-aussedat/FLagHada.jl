@@ -284,7 +284,6 @@ function get_Dynamic(id::String, domain::Network, verbose::Bool=false)
     if (id == "eikonal")
 
         res = MathFunction{Dynamic}(id, x::NetPoint -> [Velocity(x, 0.0, 1.0)] ∪ [Velocity(bdry, 1.0, 1.0) for bdry in bdries])
-        # res = MathFunction{Dynamic}(id, x::NetPoint -> [Velocity(x, 0.0, 1.0)] ∪ [Velocity(bdry, m*0.2, 1.0) for bdry in bdries for m in 1:5])
 
     elseif (domain.id == "tripod" && id == "tripod_twoaims")
 

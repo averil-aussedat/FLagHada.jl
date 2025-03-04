@@ -75,7 +75,6 @@ function get_gluing(id::String, verbose::Bool=false)
         P5 = Domain_euclidean("P5", 1, [RdPoint([0.0]), RdPoint([0.5])])
         S0 = Domain_euclidean("S0", 1, [RdPoint([-0.5]), RdPoint([1.0])])
         harmony = Domain_euclidean("harmony", 2, [RdPoint([-1.0,0.0]), RdPoint([1.0,0.5])])
-        # zarya = Domain_euclidean("zarya", 3, [RdPoint([-0.5,0.0,-0.5]), RdPoint([0.5,1.5,0.5])])
         zarya = Domain_euclidean("zarya", 3, [RdPoint([-0.5,0.0,-0.05]), RdPoint([0.5,1.5,0.05])])
 
         function get_crossing_ISS(p1::GPoint, p2::GPoint)::Vector{GPoint}
@@ -299,7 +298,6 @@ function get_gluing(id::String, verbose::Bool=false)
         end # end get_crossing
 
         domain = Gluing(id, solarpanels ∪ [unity, S5, P5, S0, harmony, zarya], get_crossing_ISS)
-        # domain = Gluing(id, solarpanels ∪ [unity, S5, P5, S0, harmony], get_crossing_ISS)
 
     else
         throw(ErrorException("unknown domain id '$id'"))
@@ -436,13 +434,6 @@ function get_Dynamic(id::String, domain::Gluing, verbose::Bool=false)
                 else
                     mag = norm(x.p .- [4.0,2.0]) / ((4.0 - x.p[1])/wind + abs(x.p[2] - 2.0))
                 end
-                # return [
-                #     Velocity(GPoint(1,[x.p[1]-h,x.p[2]]), 1.0, 1.0),     # left
-                #     Velocity(GPoint(1,[x.p[1]+h,x.p[2]]), wind, 1.0),    # right
-                #     Velocity(GPoint(1,[x.p[1],x.p[2]-h]), 1.0, 1.0),     # down
-                #     Velocity(GPoint(1,[x.p[1],x.p[2]+h]), 1.0, 1.0),     # up 
-                #     Velocity(GPoint(2,[h]),mag, 1.0)                     # jump on the segment 
-                # ]
                 return [
                     Velocity(GPoint(1,[0.0,x.p[2]]), 1.0, 1.0),     # left
                     Velocity(GPoint(1,[4.0,x.p[2]]), wind, 1.0),    # right
@@ -452,10 +443,6 @@ function get_Dynamic(id::String, domain::Gluing, verbose::Bool=false)
                 ]
 
             else 
-                # return [
-                #     Velocity(GPoint(1,[-h,2.0]), 1.0, 1.0), 
-                #     Velocity(GPoint(2,[h]),wind, 1.0)
-                # ]
                 return [
                     Velocity(GPoint(1,[0.0,2.0]), 1.0, 1.0), 
                     Velocity(GPoint(2,[4.0]),wind, 1.0)
@@ -510,10 +497,6 @@ function get_Dynamic(id::String, domain::Gluing, verbose::Bool=false)
         euclideannorm(v1::Float64, v2::Float64) = sqrt(v1^2 + v2^2)
         distordednorm(v1::Float64, v2::Float64) = max(v1,0.0)/wind + max(-v1,0.0) + abs(v2)
 
-        # euclideannorm(0.0, v2) =      distordednorm(0.0, v2)
-        # euclideannorm(v1, 0.0) =      distordednorm(v1, 0.0) if v1 <= 0.0
-        # euclideannorm(v1, 0.0) = wind*distordednorm(v1, 0.0) if v1 >= 0.0
-
         res = MathFunction{Dynamic}(id, x::GPoint -> 
             if x.comp ∈ [1,2,3,4]
                 if abs(x.p[2]) <= 1e-7 # avoid dangerous divisions
@@ -527,8 +510,8 @@ function get_Dynamic(id::String, domain::Gluing, verbose::Bool=false)
                     locres = [
                         Velocity(GPoint(x.comp,[x.p[1], 3.0]),1.0, thresh),    # up
                         Velocity(GPoint(x.comp,[x.p[1],-3.0]),1.0, thresh),    # down 
-                        Velocity(GPoint(x.comp,[-0.5,x.p[2]]),1.0, thresh),        # left
-                        Velocity(GPoint(x.comp,[ 0.5,x.p[2]]),wind,thresh),       # right 
+                        Velocity(GPoint(x.comp,[-0.5,x.p[2]]),1.0, thresh),    # left
+                        Velocity(GPoint(x.comp,[ 0.5,x.p[2]]),wind,thresh),    # right 
                     ]
                     if x.comp ∈ [2,3,4]
                         locres = vcat(locres, [
@@ -589,8 +572,6 @@ function get_Scalar(id::String, domain::Gluing, verbose::Bool=false)
 
     elseif (id == "distmeteors" && domain.id == "planeline")
 
-        # res = MathFunction{Scalar}(id, x::GPoint -> get_distance(domain, GPoint(1,[0.2,0.8]), x))
-        # res = MathFunction{Scalar}(id, x::GPoint -> get_distance(domain, GPoint(2,[1.0]), x))
         res = MathFunction{Scalar}(id, x::GPoint -> min(
             get_distance(domain, GPoint(1,[1.0,3.0]), x), 
             get_distance(domain, GPoint(2,[3.0]), x)
@@ -603,8 +584,6 @@ function get_Scalar(id::String, domain::Gluing, verbose::Bool=false)
     elseif (id == "distmeteors" && domain.id == "ISS")
 
         res = MathFunction{Scalar}(id, x::GPoint -> minimum([get_distance(domain, x, GPoint(c,[a,b])) for (c,a,b) in [(1,0.0,-2.0),(2,0.0,2.0),(3,0.0,-1.0)]]))
-        # res = MathFunction{Scalar}(id, x::GPoint -> get_distance(domain, x, GPoint(1,[0.0,-2.0])))
-        # res = MathFunction{Scalar}(id, x::GPoint -> get_distance(domain, x, GPoint(2,[0.0,2.0])))
     
     else
         throw(ErrorException("unknown scalar id '$id'"))
@@ -629,14 +608,6 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
         if probe 
             return true 
         else
-            # res = MathFunction{Scalar}(id, (t::Float64, x::GPoint) -> max(0.0, norm(x.p) - (T-t)))
-            # res = MathFunction{Scalar}(id, (t::Float64, x::GPoint) -> 
-            #     if norm(x.p) <= 1e-7
-            #         return 0.0
-            #     else
-            #         return max(0.0, norm(x.p)*(1.0 - (T-t)/sum(abs.(x.p))))
-            #     end
-            # )
             if domain.comp[1].dim == 1
                 res = MathFunction{Scalar}(id, (t::Float64, x::GPoint) -> max(0.0, abs(x.p[1]) - (T-t)))
             elseif domain.comp[1].dim == 2
@@ -724,34 +695,15 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
                             return sqrt((x.p[1]-(T-t))^2 + x.p[2]^2)
                         end
                     else # reaching the diagonal 
-                        # endpoint = [minimum(x.p) - (T-t-abs(x.p[1] - x.p[2]))/sqrt(2), minimum(x.p) - (T-t-abs(x.p[1] - x.p[2]))/sqrt(2)]
                         return max(0.0, sqrt(2) * minimum(x.p) - (T-t-abs(x.p[1] - x.p[2]))/sqrt(2))
                     end
-                    # if sum(abs.(x.p)) <= T-t + 1e-7
-                    #     return 0.0
-                    # else
-                    #     point = [0.0,0.0]
-                    #     aa = x.p .- [T-t,0.0]
-                    #     bb = x.p .- [0.0,T-t]
-                    #     if ((point .- aa)' * (bb .- aa) <= 0) || ((point .- bb)' * (aa .- bb) <= 0)
-                    #         # one of two extremals 
-                    #         return min(sqrt((point[1]-aa[1])^2+(point[2]-aa[2])^2), sqrt((point[1]-bb[1])^2+(point[2]-bb[2])^2))
-                    #     else
-                    #         # projection on the line 
-                    #         return sqrt((point[1]-aa[1])^2+(point[2]-aa[2])^2 - ((point.-aa)' * (bb .- aa))^2 / ((aa[1]-bb[1])^2 + (aa[2]-bb[2])^2))
-                    #     end
-                    #     # return max(0.0, norm(x.p)*(1.0 - (T-t)/sum(abs.(x.p))))
-                    # end
                 else # x.comp = 2
                     if x.p[1] >= T-t # stay within component 2
-                        # println("by there, ", x.p[1] - (T-t))
                         return sqrt(4.0^2 + 2.0^2) + x.p[1] - (T-t)
                     else
                         if 2.0 >= T-t-x.p[1] # not reaching the diagonal before the end of time  
-                            # println("here, ", T-t-x.p[1])
                             return sqrt((4.0 - (T-t-x.p[1]))^2 + 2.0^2)
                         else  # reaching the diagonal 
-                            # println("there")
                             return max(0.0, sqrt(2.0^2 + 2.0^2) - (T-t-x.p[1]-2.0)/sqrt(2)) # times √2 because norm of a constant vector in dim 2 
                         end
                     end
@@ -817,7 +769,6 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
 
                 if x1 >= tar1 # moving with speed 1, no wind in action 
                     if allowedtime <= abs(abs(x1-tar1) - abs(x2-tar2)) # not reaching the diagonal 
-                        # println("here, returning (", x1 - allowedtime * (abs(x1-tar1) > abs(x2-tar2)), ", ", x2 - allowedtime * sign(x2-tar2)*(abs(x1-tar1) < abs(x2-tar2)), ")")
                         return [
                             x1 - allowedtime * (abs(x1-tar1) > abs(x2-tar2)), 
                             x2 - allowedtime * sign(x2-tar2)*(abs(x1-tar1) < abs(x2-tar2))
@@ -827,13 +778,11 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
                     # time = distance / speed = 2 * min(abs(x1-tar1), abs(x2-tar2))
                     elseif allowedtime <= abs(abs(x1-tar1) - abs(x2-tar2)) + 2.0 * min(abs(x1-tar1), abs(x2-tar2)) # reaching the diagonal but not the junction 
                         timetodiag = abs(abs(x1-tar1) - abs(x2-tar2))
-                        # println("here 2, returning (", x1 - timetodiag * (abs(x1-tar1) > abs(x2-tar2)) - (allowedtime-timetodiag) / 2.0, ", ", x2 - (timetodiag * (abs(x1-tar1) < abs(x2-tar2)) + (allowedtime-timetodiag) / 2.0) * sign(x2-tar2), ")")
                         return [
                             x1 -  timetodiag * (abs(x1-tar1) > abs(x2-tar2)) - (allowedtime-timetodiag) / 2.0, 
                             x2 - (timetodiag * (abs(x1-tar1) < abs(x2-tar2)) + (allowedtime-timetodiag) / 2.0) * sign(x2-tar2)
                         ], false, 0.0
                     else # reaching the junction 
-                        # println("here 3, stays ", allowedtime - abs(abs(x1-tar1) - abs(x2-tar2)) - 2.0 * min(abs(x1-tar1), abs(x2-tar2)))
                         return [tar1, tar2], true, allowedtime - abs(abs(x1-tar1) - abs(x2-tar2)) - 2.0 * min(abs(x1-tar1), abs(x2-tar2))
                     end
                 else # x1-tar1 < 0, wind in action 
@@ -843,25 +792,20 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
                     if abs(x2 - tar2) <= wind * abs(x1 - tar1) # moving horizontally first
                         timetodiag = abs((tar1-x1)/wind - abs(x2 - tar2)/wind^2)
                         if allowedtime <= timetodiag
-                            # println("there, timetodiag $timetodiag, not reached")
                             return [x1 + allowedtime * wind, x2], false, 0.0
                         end # implicit else 
-                        # projondiag = [tar1 + abs(x2 - tar2)/wind, x2]
                         projondiag = [x1 + timetodiag * wind, x2]
                     else # moving vertically first 
                         timetodiag = abs(x2 - tar2) - wind * abs(x1-tar1)
                         if allowedtime <= timetodiag
                             return [x1, x2 + sign(tar2-x2) * allowedtime], false, 0.0
                         end # implicit else 
-                        # projondiag = [x1, tar2 + sign(tar2-x2) * wind * (tar1-x1)]
                         projondiag = [x1, x2 + sign(tar2-x2) * timetodiag]
                     end
                     # so allowedtime > timetodiag 
                     speedondiag = wind / sqrt(1.0 + wind^2)
                     timetojunc = timetodiag + norm(projondiag .- [tar1,tar2]) / speedondiag
-                    # println("there, timetodiag $timetodiag, projondiag ", projondiag, ", speedondiag ", speedondiag, ", timetojunc ", timetojunc)
                     if allowedtime <= timetojunc
-                        # println("returning (", projondiag[1] + (allowedtime-timetodiag) * speedondiag/sqrt(1+wind^2), ",", projondiag[2] - (allowedtime-timetodiag) * speedondiag/sqrt(1+wind^2) * sign(x2-tar2) * wind, ")")
                         return [
                             projondiag[1] + (allowedtime-timetodiag) * speedondiag/sqrt(1+wind^2), 
                             projondiag[2] - (allowedtime-timetodiag) * speedondiag/sqrt(1+wind^2) * sign(x2-tar2) * wind
@@ -923,8 +867,6 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
             end # function V2
 
             res = MathFunction{Scalar}(id, (t::Float64, x::GPoint) -> min(V1pl(t,x), V2pl(t,x)))
-            # res = MathFunction{Scalar}(id, (t::Float64, x::GPoint) -> V1pl(t,x))
-            # res = MathFunction{Scalar}(id, (t::Float64, x::GPoint) -> V2pl(t,x))
 
         end
 
@@ -972,25 +914,20 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
                     if abs(x2 - tar2) <= wind * abs(x1 - tar1) # moving horizontally first
                         timetodiag = abs((tar1-x1)/wind - abs(x2 - tar2)/wind^2)
                         if allowedtime <= timetodiag
-                            # println("there, timetodiag $timetodiag, not reached")
                             return [x1 + allowedtime * wind, x2], false, 0.0
                         end # implicit else 
-                        # projondiag = [tar1 + abs(x2 - tar2)/wind, x2]
                         projondiag = [x1 + timetodiag * wind, x2]
                     else # moving vertically first 
                         timetodiag = abs(x2 - tar2) - wind * abs(x1-tar1)
                         if allowedtime <= timetodiag
                             return [x1, x2 + sign(tar2-x2) * allowedtime], false, 0.0
                         end # implicit else 
-                        # projondiag = [x1, tar2 + sign(tar2-x2) * wind * (tar1-x1)]
                         projondiag = [x1, x2 + sign(tar2-x2) * timetodiag]
                     end
                     # so allowedtime > timetodiag 
                     speedondiag = wind / sqrt(1.0 + wind^2)
                     timetojunc = timetodiag + norm(projondiag .- [tar1,tar2]) / speedondiag
-                    # println("there, timetodiag $timetodiag, projondiag ", projondiag, ", speedondiag ", speedondiag, ", timetojunc ", timetojunc)
                     if allowedtime <= timetojunc
-                        # println("returning (", projondiag[1] + (allowedtime-timetodiag) * speedondiag/sqrt(1+wind^2), ",", projondiag[2] - (allowedtime-timetodiag) * speedondiag/sqrt(1+wind^2) * sign(x2-tar2) * wind, ")")
                         return [
                             projondiag[1] + (allowedtime-timetodiag) * speedondiag/sqrt(1+wind^2), 
                             projondiag[2] - (allowedtime-timetodiag) * speedondiag/sqrt(1+wind^2) * sign(x2-tar2) * wind
@@ -1000,7 +937,6 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
                     end
                 end
             end
-
 
             # ̇yₜ = -2(1-yₜ) => yₜ = e^{2(t-s)} yₛ + e^{2(t-s)} ∫_τ=s^t e^{-2(τ-s)} (-2) dτ
             # = e^{2(t-s)} yₛ - 2 e^{2t} ∫_τ=s^t e^{-2τ} dτ
@@ -1027,12 +963,10 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
                 end
                 # by now, |x| <= 1/2
                 timetojunc = - 0.5 * log(1.0 - abs(x))
-                # println("x : ", x, ", available time : ", allowedtime, ", timetojunc : ", timetojunc)
                 if allowedtime >= timetojunc
                     return 0.0, true, allowedtime - timetojunc
                 else
                     res = sign(x) * (exp(2*allowedtime)*(abs(x)-1.0) + 1.0)
-                    # println("x : ", x, ", available time : ", allowedtime, ", timetojunc : ", timetojunc, ", returning ", res)
                     return res, false, 0.0
                 end
             end
@@ -1063,11 +997,6 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
 
                 elseif x.comp == 1
                     endpoint, target_is_reached, surplus_of_time = move_in_panel(x.p[1], x.p[2], 0.0, -2.0, T-t)
-                    # if T-t >= 2.5 # && !target_is_reached && x.p[1] > 0.0
-                    #     if !((-0.5 <= endpoint[1] <= 0.5) && (-3.0 <= endpoint[2] <= 3.0))
-                    #         println("point ", pt_to_str(x), " is going to ", endpoint, " in time ", T - t)
-                    #     end
-                    # end
                     if target_is_reached
                         return 0.0
                     else
@@ -1144,7 +1073,6 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
             end # function V1 
 
             function V2(t::Float64, x::GPoint) # target C2=>[0.0,2.0]
-                # println("hey")
                 if t >= T 
                     if x.comp == 2
                         return sqrt(x.p[1]^2 + (x.p[2]-2.0)^2)
@@ -1170,11 +1098,6 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
 
                 elseif x.comp == 2
                     endpoint, target_is_reached, surplus_of_time = move_in_panel(x.p[1], x.p[2], 0.0, 2.0, T-t)
-                    # if T-t >= 2.5 # && !target_is_reached && x.p[1] > 0.0
-                    #     # if !((-0.5 <= endpoint[1] <= 0.5) && (-3.0 <= endpoint[2] <= 3.0))
-                    #         println("point ", pt_to_str(x), " is going to ", endpoint, " in time ", T - t)
-                    #     # end
-                    # end
                     if target_is_reached
                         return 0.0
                     else
@@ -1190,11 +1113,6 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
 
                 elseif x.comp == 1
                     endpoint, target_is_reached, surplus_of_time = move_in_panel(x.p[1], x.p[2], 0.5, 0.0, T-t)
-                    # if T-t >= 1.9 #&& -0.5 <= x.p[2] <= 0.5
-                    #     # if !((-0.5 <= endpoint[1] <= 0.5) && (-3.0 <= endpoint[2] <= 3.0))
-                    #         println("point ", pt_to_str(x), " is going to ", endpoint, " in time ", T - t, ", stays ", surplus_of_time)
-                    #     # end
-                    # end
                     if target_is_reached
                         return return V2(T-surplus_of_time, GPoint(6,[0.0]))
                     else
@@ -1340,11 +1258,6 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
                     else 
                         return sqrt(1.0^2 + 0.5^2) + 1.5 + abs(endpoint)
                     end
-                    # if abs(x.p[1]) > T-t # we don't reach the transversal ax before the end of the time 
-                    #     return sqrt(1.0^2 + 0.5^2) + 1.5 + abs(x.p[1]) - (T-t)
-                    # else
-                    #     return V3(t + abs(x.p[1]), GPoint(5,[0.0]))
-                    # end
 
                 elseif x.comp == 9 # Harmony: we are only allowed to move at speed one towards Unity (8)
                     if sqrt(x.p[1]^2 + (x.p[2]-0.5)^2) > T-t # we don't reach 8 before the end of the time 
@@ -1361,9 +1274,7 @@ function get_Analytical(domain::Gluing, dynamicid::String, costid::String, T::Fl
                     end
                 end # distinction x.comp
             end # function V3
-
-            # res = MathFunction{Scalar}(id, (t::Float64, x::GPoint) -> V1(t,x))
-            # res = MathFunction{Scalar}(id, (t::Float64, x::GPoint) -> V2(t,x))
+            
             res = MathFunction{Scalar}(id, (t::Float64, x::GPoint) -> min(V1(t,x), min(V2(t,x),V3(t,x))))
 
         end

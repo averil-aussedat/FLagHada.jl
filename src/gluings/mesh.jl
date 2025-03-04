@@ -19,7 +19,6 @@ end
 export get_mesh_convex
 function get_mesh_convex(domain::Gluing, mesh::GMesh, points::Vector{GPoint}, verbose::Bool=false)
 
-    # println("points : ", points, ", first comp : ", points[1].comp)
     if length(union([p.comp for p in points])) == 1 # only one component
         return @views mesh.compinits[points[1].comp] .- 1 .+ 
                     get_mesh_convex(domain.comps[points[1].comp], mesh.complayers[points[1].comp], 
@@ -27,8 +26,6 @@ function get_mesh_convex(domain::Gluing, mesh::GMesh, points::Vector{GPoint}, ve
 
     else
         allvertices =  [cross for p1 in points for p2 in points for cross in domain.get_crossing(p1, p2)]
-        # println("allvertices : ", allvertices)
-        # println("allvertice type : ", typeof(allvertices))
         comps = union([p.comp for p in allvertices], [p.comp for p in points])
         return union([get_mesh_convex(domain, mesh, [pt for pt in allvertices ∪ points if pt.comp == c], verbose) for c in comps]...)
     end

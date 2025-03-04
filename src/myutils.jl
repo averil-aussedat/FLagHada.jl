@@ -47,10 +47,8 @@ end
 """
 function get_kappa_time(vv::Velocity, t::Float64, truedist::Float64)
     if (abs(vv.scale) <= 1e-7) || (abs(vv.thresh) <= 1e-7) || (truedist - vv.scale * t >= vv.thresh)
-        # print(" by the first method")
         return t
     else 
-        # print(" by the second method")
         return (truedist - exp(- vv.scale/vv.thresh * t + max(0.0,truedist/vv.thresh - 1.0))*min(truedist,vv.thresh)) / vv.scale 
     end
 end

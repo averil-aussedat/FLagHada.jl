@@ -51,7 +51,6 @@ function create_and_save_pics(testcase::TestCase, testcaseid::String, foldername
             plot_values!(p, domain, plotter, mesh, hatVV[:,1], ms)
             plot!(p, title="", dpi=400)
             savefig(p, "data/$foldername/$(testcase.runid)_V$(iN)"); verb(verbose, "Saving $(testcase.runid)_V$(iN)")
-            # display(p)
             verb(verbose, "... done.")
         end
         if (pictype == "feedback" || (typeof(pictype) == Vector{String} && "feedback" in pictype))
@@ -59,7 +58,6 @@ function create_and_save_pics(testcase::TestCase, testcaseid::String, foldername
             plot!(q,dpi=400)
             plot_feedback_map!(q, domain, plotter, dynamic, hatV, testcase.T/N, testcase.T, verbose)
             savefig(q, "data/$foldername/$(testcase.runid)_FB$(iN)"); verb(verbose, "Saving $(testcase.runid)_FB$(iN)")
-            # display(q)
         end
     else 
         throw(ErrorException("what is domain type $(testcase.domaintype) exactly"))
@@ -77,7 +75,6 @@ function compute_errors_controls!(testcase::TestCase, domain::Domain, dynamic::M
         haty, hatu = get_control(domain, dynamic, hatV, testcase.T, N, initp, false)
 
         if save_errors && has_analytical
-            # y, u = get_analytical_yu(domain, dynamic, testcase.costid, testcase.T, N, initp)
             err = abs(terminalcost.call(haty[end]) - analytical.call(0.0, initp))
             worserr = max(worserr, err)
             meanerr += err
@@ -90,8 +87,6 @@ function compute_errors_controls!(testcase::TestCase, domain::Domain, dynamic::M
                 println("Warning: renormalized loss of optimality not computed")
             end
             verb(verbose, "Starting from ", pt_to_str(initp), ", getting to ", pt_to_str(haty[end]), ", err : ", err)
-            # println("Last point : ", pt_to_str(haty[end]), ", should have been ", pt_to_str(y[end]), ", loss of optimality: ", testcase.erroruSL[iN])
-            # println("Real last point : ", haty[end])
         end
     end
     

@@ -155,7 +155,6 @@ function get_mesh_convex(domain::Ellipses, mesh::EllMesh, points::Vector{EPoint}
                     # --|-------- ⋯ ------|-------- ⋯ ---|----> beta
                     # beta[ibxi]      beta[ibxk]      beta[ibxj]
                     #
-                    # println("Entering here, ibxi = ", ibxi, ", ibxj = ", ibxj)
                     if ibxi+1 <= ibxj-1
                         vv = Velocity(points[xj], 1.0, 0.0)
                     end
@@ -165,16 +164,11 @@ function get_mesh_convex(domain::Ellipses, mesh::EllMesh, points::Vector{EPoint}
                         ceinture = 0; bretelles = 20; goon = true 
                         tn = (mesh.betas[ibxk] - mesh.betas[ibxi]) / (mesh.betas[ibxj] - mesh.betas[ibxi])
                         tnp1 = tn
-                        # println("Init : ", tn)
 
                         while (goon && ceinture <= bretelles)
                             current_beta = get_exponential(domain, vv, points[xi], tn).beta
-                            # println("\tpassing")
                             beta_prime = (get_exponential(domain, vv, points[xi], tn+h).beta - current_beta) / h
-                            # println("\ttrespassing")
                             tnp1 = tn - proj((current_beta - mesh.betas[ibxk]) / beta_prime, 0.5) # ahem
-                            # tnp1 = max(0.0,min(1.0,tn - (current_beta - mesh.betas[ibxk]) / beta_prime))
-                            # println("\ttnp1 : ", tnp1, ", beta : ", current_beta, " for target ", mesh.betas[ibxk])
                             if abs(current_beta - mesh.betas[ibxk]) <= 1e-6
                                 goon = false 
                             end
@@ -185,9 +179,6 @@ function get_mesh_convex(domain::Ellipses, mesh::EllMesh, points::Vector{EPoint}
                             throw(ErrorException("Newton got out, last tn : $tnp1"))
                         end
 
-                        # println("End\n")
-                        # println("Pushing ", search_in_mesh(domain, mesh, get_exponential(domain, vv, points[xi], tnp1)), " in strata $ibxk")
-
                         push!(extremals_by_stratae[ibxk-minibetares+1], 
                                 search_in_mesh(domain, mesh, get_exponential(domain, vv, points[xi], tnp1)))
                     end
@@ -197,7 +188,7 @@ function get_mesh_convex(domain::Ellipses, mesh::EllMesh, points::Vector{EPoint}
     end
 
     # at this point, extremals_by_stratae contains, for each beta attained by the convex, 
-    # a set of points whose convex hull is (?) the intersection of the convex with the mesh and the strata 
+    # a set of points whose convex hull is the intersection of the convex with the mesh and the strata 
     # only stays to do a convex hull in the cartesian part :D
 
     if domain.ctedet 

@@ -131,8 +131,8 @@ function plot_function_ctedet(domain::Ellipses, mesh::EllMesh, values::Vector{Fl
 
         Nnewmesh = 100
 
-        indices_ag = 1:round(Int,mesh.nag/Nnewmesh):mesh.nag
-        indices_bb = 1:round(Int,mesh.nb/Nnewmesh):mesh.nb
+        indices_ag = 1:max(1,round(Int,mesh.nag/Nnewmesh)):mesh.nag
+        indices_bb = 1:max(1,round(Int,mesh.nb/Nnewmesh)):mesh.nb
         verb(verbose, "Selecting a submesh of ", length(indices_ag) * length(indices_bb), " points")
 
         xag = [aa for bb in indices_bb for aa in LinRange(-domain.alga, domain.alga, mesh.nag)[indices_ag]]
@@ -171,18 +171,11 @@ function plot_feedback_map_ctedet(domain::Ellipses, dynamic::MathFunction{Dynami
     points = [EPoint(aa,bb,-aa) for bb in bbs for aa in aas]
     inners = [(x.c11 + x.c22)/2.0 + sqrt((x.c11 + x.c22)^2/4 - x.det) < 2.0 for x in points]
 
-    # feedback = [argmin([value(0.0, get_exponential(domain, vv, pt, h)) for vv in dynamic.call(pt)]) for pt in points]
-    # truefeed = [1 + (pt.alpha < pt.gamma) for pt in points]
-    # directions = [get_exponential(domain, dynamic.call(pt)[ipt], pt, h) for (ipt,pt) in zip(feedback,points)]
-    # truedirect = [get_exponential(domain, dynamic.call(pt)[ipt], pt, h) for (ipt,pt) in zip(truefeed,points)]
-
     directions = [get_feedback_direction(domain, value, dynamic.call(pt), pt, h, T) for pt in points]
     truedirect = [get_exponential(domain, dynamic.call(pt)[1 + (pt.alpha < pt.gamma)], pt, h) for pt in points]
 
     zz = [[dir.alpha - pt.alpha, dir.beta  - pt.beta] for (dir,pt) in zip(directions, points)]
-    # zbb = [  for (dir,pt) in zip(directions, points)]
     tz = [[dir.alpha - pt.alpha, dir.beta  - pt.beta] for (dir,pt) in zip(truedirect, points)]
-    # tzb = [dir.beta  - pt.beta  for (dir,pt) in zip(truedirect, points)]
 
     for z in zz 
         if norm(z) > 1e-7
@@ -196,13 +189,6 @@ function plot_feedback_map_ctedet(domain::Ellipses, dynamic::MathFunction{Dynami
     end
     zz .*= 0.45 * (2.0*domain.alga)/Ngrid
     tz .*= 0.45 * (2.0*domain.alga)/Ngrid
-
-    # fact = min(1.0, 0.8 * (2.0*domain.alga) / (Ngrid * maximum(sqrt.(zag.^2 .+ zbb.^2))))
-    # verb(verbose, "Multiplication by a factor of ", fact)
-    # zag .*= fact
-    # zbb .*= fact
-    # tza .*= fact
-    # tzb .*= fact
 
     # plotting 
     p = plot(xlabel="α = - γ", ylabel = "β", dpi=300, legend=false)
@@ -218,8 +204,6 @@ function plot_feedback_map_ctedet(domain::Ellipses, dynamic::MathFunction{Dynami
         if inner 
             col = :red
             arrow0!(p, x, y, v0, w0, lw=2, as=0.3, lc=col, ec=2.0)
-        # else 
-        #     col = :salmon
         end
     end
     for (inner, x,y,v1,w1) in zip(inners,xag,ybb,[z[1] for z in zz],[z[2] for z in zz])
@@ -231,8 +215,6 @@ function plot_feedback_map_ctedet(domain::Ellipses, dynamic::MathFunction{Dynami
         arrow0!(p, x, y, v1, w1, lw=2, as=0.3, lc=col, ec=2.0)
     end
     plot!(p, xlims=[-domain.alga*(1.0+3/Ngrid),domain.alga*(1.0+3/Ngrid)], ylims=[-maximum(ybb)*(1.0+2/Ngrid),maximum(ybb)*(1.0+2/Ngrid)])
-    # quiver!(p, xag, ybb, quiver=(tza, tzb), lw=2, color=:red)
-    # quiver!(p, xag, ybb, quiver=(zag, zbb), lw=2, color=:black)
 
     return p
 end

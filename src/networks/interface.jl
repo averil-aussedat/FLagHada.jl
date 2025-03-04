@@ -83,7 +83,6 @@ function plot_function(domain::Network, plotter::Network_plotter, vals::VecOrMat
     bounds .+= 0.2 .* (bounds[:,2] .- bounds[:,1]) .* [-1.0 1.0; -1.0 1.0]
     plot!(p, xlims=bounds[1,:], ylims=bounds[2,:])
 
-    # display(p)
     verb(verbose, "... done.")
     return p
 end
@@ -112,8 +111,6 @@ function plot_function(domain::Network, plotter::Network_plotter, mesh::Mesh, va
     plot_junction_points!(p, bounds, domain, plotter, idtoplot, juncvals, dim3)
     bounds .+= 0.2 .* (bounds[:,2] .- bounds[:,1]) .* [-1.0 1.0; -1.0 1.0]
     plot!(p, xlims=bounds[1,:], ylims=bounds[2,:])
-
-    # display(p)
 
     verb(verbose, "... done.")
     return p
@@ -157,7 +154,6 @@ function plot_feedback_map(domain::Network, plotter::Network_plotter, dynamic::M
     meshplot = get_mesh(domain, dxplot)
 
     # getting the optimal feedback 
-    # feedback = [argmin([value(0.0, get_exponential(domain, vv, pt, h)) for vv in dynamic.call(pt)]) for pt in meshplot.points]
     directions = [domain.juncpoints[get_direction(domain, pt, get_feedback_direction(domain, value, dynamic.call(pt), pt, h, T))] for pt in meshplot.points]
     coordspts = [pt_to_coords(domain, plotter, pt) for pt in meshplot.points]
     coordsdir = [pt_to_coords(domain, plotter, dir) .- pt_to_coords(domain, plotter, pt) for (dir,pt) in zip(directions, meshplot.points)]

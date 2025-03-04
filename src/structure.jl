@@ -37,7 +37,3 @@ end
 
 export Mesh
 abstract type Mesh end # must all contain the same common part
-
-export OutOfDomainException
-struct OutOfDomainException <: Exception 
-end

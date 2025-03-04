@@ -56,9 +56,7 @@ export get_exponential
 """
 function get_exponential(domain::Ellipses, velocity::Velocity, p::EPoint, h::Float64)
     dist = get_distance(domain, p, velocity.target)
-    # print("Changing h = ", h)
     h = get_kappa_time(velocity, h, dist)
-    # println(" into ", h)
     if dist <= 1e-8
         return p 
     else 
@@ -91,8 +89,6 @@ function get_exponential(domain::Ellipses, velocity::Velocity, p::EPoint, h::Flo
             # using now the explicit formula for the exponential 
             coeffp = exp(h * (kI + kB * traceB/2)) * (cosh(h * kB * hdiffl) - traceB/2 * sinh(h * kB * hdiffl) / hdiffl)
             coefft = exp(h * (kI + kB * traceB/2)) *  sinh(h * kB * hdiffl) / hdiffl
-
-            # println("coeffp : ", coeffp, ", coefft : ", coefft)
 
             return EPoint([
                 coeffp * p.c11 + coefft * velocity.target.c11, 

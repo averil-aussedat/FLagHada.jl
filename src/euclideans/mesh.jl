@@ -55,7 +55,6 @@ function get_mesh_convex(domain::Domain_euclidean, meshlayers::Vector{Int}, mesh
     elseif domain.dim == 1
         indmin = 1 + round(Int, (meshlayers[1] - 1) * (minimum([pt.p[1] for pt in points]) - domain.bounds[1].p[1]) / (domain.bounds[2].p[1] - domain.bounds[1].p[1]))
         indmax = 1 + round(Int, (meshlayers[1] - 1) * (maximum([pt.p[1] for pt in points]) - domain.bounds[1].p[1]) / (domain.bounds[2].p[1] - domain.bounds[1].p[1]))
-        # println("indmin : ", indmin, ", indmax : ", indmax, ", interval : ", max(1,indmin):min(length(meshpoints),indmax))
         return collect(max(1,indmin):min(length(meshpoints),indmax))
 
     elseif domain.dim == 2
@@ -75,15 +74,6 @@ function get_mesh_convex(domain::Domain_euclidean, meshlayers::Vector{Int}, mesh
         boxindexes = [1 + sum((boxpt[i] - 1) * prod(meshlayers[i+1:end]) for i in 1:domain.dim) for boxpt in 
             zip([repeat(lowerinds[i]:upperinds[i], inner=prod(meshlayers[i+1:end]), outer=prod(meshlayers[1:i-1])) for i in 1:domain.dim]...)
         ]
-
-        # if maximum(boxindexes) > length(meshpoints)
-        #     println("meshlayers : ", meshlayers)
-        #     println("meshproj : ", meshproj)
-        #     println("lowerinds : ", lowerinds)
-        #     println("upperinds : ", upperinds)
-        #     # println("boxiterator : ", boxiterator, ", of type ", typeof(boxiterator))
-        #     println("boxindexes : ", boxindexes)
-        # end
 
         return meshproj ∪ [ipt for ipt in boxindexes if meshpoints[ipt].p ∈ polytope]
     end

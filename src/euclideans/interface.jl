@@ -14,10 +14,6 @@ function plot_function(domain::Domain_euclidean, mesh::Mesh, values::VecOrMat{Fl
             display(p)
         else
 
-        # mask = (values[:] .<= 0.05)
-        # p = scatter([p.p[1] for p in points[mask]], [p.p[2] for p in points[mask]], xlims=domain.bounds[1], ylims=domain.bounds[2])
-        # display(p)
-
             p = scatter([p.p[1] for p in mesh.points], [p.p[2] for p in mesh.points], marker_z=values[:], 
                 xaxis="x", yaxis="y", legend=false, colorbar=true, aspect_ratio=:equal, ms=2, markershape=:square)
             display(p)

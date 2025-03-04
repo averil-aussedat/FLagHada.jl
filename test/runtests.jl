@@ -5,7 +5,9 @@ using DocStringExtensions
 @testset "FLagHada.jl" begin
 
     println("For the sake of saving your time, the provided tests are commented. Please uncommment if needed")
-    
+
+    # these are my real tests. Not suited for checking the package integrity
+
     # @testset "euclideans tests" begin
     #     include("euclideans_tests.jl")
     # end

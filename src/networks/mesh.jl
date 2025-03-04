@@ -126,7 +126,6 @@ function get_mesh_convex(domain::Network, mesh::Mesh, points::Vector{<:NetPoint}
                 return union([get_mesh_convex(domain, mesh, union([points[1]], [q for q in points[2:end] if get_direction(domain, points[1], q) == d]), true) for d in dirs]...)
             end
         else
-            # theconv = get_convex(domain, points) # trimming
             trimmedpoints = get_convex(domain, points) # trimming
             return get_mesh_convex(domain, mesh, union([mesh.points[search_in_mesh(domain, mesh, p)] for p in trimmedpoints]), true)
         end

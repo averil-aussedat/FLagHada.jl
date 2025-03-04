@@ -56,5 +56,5 @@ export GMesh
     complayers::Vector{Vector{Int}}
 end
 Base.:(==)(m1::GMesh, m2::GMesh) = (m1.npoints == m2.npoints) && (m1.step == m2.step) && (m1.points == m2.points) && 
-                                    (m1.compinits == m2.compinits) && (m1.compstops == m2.compstops) && (m1.complayers == m2.complayers) 
+                                   (m1.compinits == m2.compinits) && (m1.compstops == m2.compstops) && (m1.complayers == m2.complayers) 
 

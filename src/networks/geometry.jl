@@ -152,32 +152,8 @@ function get_convex(domain::Network, points::Vector{<:NetPoint}, trim=true)
             ceinture += 1
         end
     end
-
-    # return Network_convex(points)
     return points
 end
-
-# export get_distance_to_convex
-# """
-# $(SIGNATURES)
-
-# Return the distance to a convex set in 1D CAT(0) networks. 
-
-# """
-# function get_dist_to_convex(domain::Network, convex::Network_convex, yj::NetPoint)
-#     # Test if yj lies within the convex hull 
-#     firstdir = get_direction(domain, yj, convex.points[1])
-#     goon = true; iq = 2
-#     while goon && (iq <= convex.thelen)
-#         if firstdir == get_direction(domain, yj, convex.points[iq])
-#             iq += 1
-#         else
-#             goon = false
-#             return 0.0
-#         end
-#     end
-#     return minimum([get_distance(domain, p, yj) for p in convex.points])
-# end
 
 export get_exponential
 """
@@ -190,7 +166,6 @@ function get_exponential(domain::Network, velocity::Velocity, p::JuncP, h::Float
         h = get_kappa_time(velocity, h, get_distance(domain, velocity.target, p))
     end
     if (h * velocity.scale > get_distance(domain, p, velocity.target))
-        # throw(OutOfDomainException())
         return velocity.target
     elseif (velocity.scale <= 1e-8) || ((typeof(velocity.target)==JuncP) && (velocity.target.id == p.id))
         return p
@@ -212,12 +187,9 @@ end
 
 function get_exponential(domain::Network, velocity::Velocity, p::EdgeP, h::Float64; recur::Bool=false)
     if !recur
-        # print("changing h = ", h)
         h = get_kappa_time(velocity, h, get_distance(domain, velocity.target, p))
-        # println(" into ", h)
     end
     if (h * velocity.scale > get_distance(domain, p, velocity.target))
-        # throw(OutOfDomainException())
         return velocity.target
     elseif (velocity.scale <= 1e-8) || (get_distance(domain,p,velocity.target) <= 1e-8)
         return p

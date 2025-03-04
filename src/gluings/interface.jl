@@ -18,7 +18,6 @@ function plot_gluing(domain::Gluing, plotter::Gluing_plotter; lw=:auto, ms=:auto
     for (icomp, comp) in enumerate(domain.comps) 
 
         bd = [plotter.get_plotting_coords(domain, icomp, p) for p in comp.bounds]
-        # println("bd : ", bd)
 
         if comp.dim == 1
             append!(vertices, bd)
@@ -43,8 +42,6 @@ function plot_gluing(domain::Gluing, plotter::Gluing_plotter; lw=:auto, ms=:auto
     end
 
     p = plot(legend=false, aspect_ratio=1.0)
-    # println("vertices : ", vertices)
-    # println("edges : ", edges)
 
     if plotter.dim == 2
         minx = minimum([v[1] for v in vertices])
@@ -56,7 +53,6 @@ function plot_gluing(domain::Gluing, plotter::Gluing_plotter; lw=:auto, ms=:auto
         end
         scatter!(p, [v[1] for v ∈ vertices], [v[2] for v ∈ vertices], xlims=[minx-0.5,maxx+0.5], ylims=[miny-0.5,maxy+0.5], color=:black, ms=ms)
         for edge in edges
-            # println("plotting edge ", edge)
             plot!(p, [edge[1][1],edge[2][1]], [edge[1][2],edge[2][2]], color=:black, lw=lw)
         end
     elseif plotter.dim == 3
@@ -102,22 +98,7 @@ function plot_values!(p, domain::Gluing, plotter::Gluing_plotter, mesh::GMesh, v
 
     toplot = [plotter.get_plotting_coords(domain, p.comp, p) for p in mesh.points]
     if plotter.dim == 2
-        # if domain.id == "planeline"
-        #     subnum = 40
-        #     # subnum = sqrt(mesh.compstops[1]-mesh.compinits[1]) / 50
-        #     nxy = mesh.complayers[1][1]
-        #     step = ceil(Int,nxy/subnum)
-        #     ind1 = [1 + (i-1) * nxy + j-1 for i in collect(1:step:nxy) ∪ [nxy] for j in collect(1:step:nxy) ∪ [nxy]]
-        #     # ind1 = collect(mesh.compinits[1]:ceil(Int,sqrt(mesh.compstops[1]-mesh.compinits[1])/subnum):mesh.compstops[1]) ∪ [mesh.compstops[1]]
-        #     # println("ind1 : ", ind1)
-        #     ind2 = collect(mesh.compinits[2]:ceil(Int,(mesh.compstops[2]-mesh.compinits[2])/subnum):mesh.compstops[2]) ∪ [mesh.compstops[2]]
-        #     surface!(p, [tp[1] for tp in toplot[ind1]], [tp[2] for tp in toplot[ind1]], values[ind1])
-        #     # surface!(p, [tp[1] for tp in toplot[ind2]], [tp[2] for tp in toplot[ind2]], values[ind2])
-        #     scatter3d!(p, [tp[1] for tp in toplot[ind2]], [tp[2] for tp in toplot[ind2]], values[ind2], ms=ms, mc=colors[ind2], msc=colors[ind2])
-        #     # plot!(p, [tp[1] for tp in toplot[ind2]], [tp[2] for tp in toplot[ind2]], values[ind2], ms=3.0)
-        # else
-            scatter!(p, [tp[1] for tp in toplot], [tp[2] for tp in toplot], mc=colors, msc=colors, ms=ms, shape=:rect)
-        # end
+        scatter!(p, [tp[1] for tp in toplot], [tp[2] for tp in toplot], mc=colors, msc=colors, ms=ms, shape=:rect)
     else
         if domain.id == "ISS"
             toplot .= vcat(toplot[mesh.compstops[end]:-1:mesh.compinits[end]], toplot[begin:mesh.compinits[end]-1])
@@ -128,64 +109,10 @@ function plot_values!(p, domain::Gluing, plotter::Gluing_plotter, mesh::GMesh, v
         plot!(p, title = "Value between $(numtostr(minv,6)) and $(numtostr(maxv,6))")
         verb(verbose, "value between $minv and $maxv")
     end
-    # plot!(p, colorbar=true)
 end
 
 export plot_feedback_map!
 function plot_feedback_map!(p, domain::Gluing, plotter::Gluing_plotter, dynamic::MathFunction{Dynamic}, value, h::Float64, T::Float64, verbose::Bool=false)
-
-    # if domain.id == "planeline"
-    #     # subgrid of Ngrid^2 
-    #     Ngrid = 15
-
-    #     # getting the optimal feedback 
-    #     lrange = LinRange(0.05,0.95,Ngrid)
-    #     points1 = [GPoint(1,[xx,yy]) for xx in lrange for yy in lrange]
-    #     points2 = [GPoint(2,[rr]) for rr in lrange]
-
-    #     directions1 = [get_feedback_direction(domain, value, dynamic.call(pt), pt, h, T) for pt in points1]
-    #     directions2 = [get_feedback_direction(domain, value, dynamic.call(pt), pt, h, T) for pt in points2]
-    #     # truedirect = [get_exponential(domain, dynamic.call(pt)[1 + (pt.alpha < pt.gamma)], pt, h) for pt in points]
-
-    #     zz1 = [dir.p .- pt.p for (dir,pt) in zip(directions1, points1)]
-    #     zz2 = [sign(dir.p[1] .- pt.p[1]) for (dir,pt) in zip(directions2, points2)]
-    #     # tz = [[dir.alpha - pt.alpha, dir.beta  - pt.beta] for (dir,pt) in zip(truedirect, points)]
-    #     # tzb = [dir.beta  - pt.beta  for (dir,pt) in zip(truedirect, points)]
-
-    #     for z in zz1 
-    #         if norm(z) > 1e-7
-    #             z ./= norm(z)
-    #         end
-    #     end
-    #     # for z in tz
-    #     #     if norm(z) > 1e-7
-    #     #         z ./= norm(z)
-    #     #     end
-    #     # end
-    #     zz1 .*= 0.3 * 2.0/Ngrid
-    #     zz2 .*= 0.3 * 2.0/Ngrid
-    #     # tz .*= 0.45 * 2.0/Ngrid
-
-    #     # plotting 
-    #     plot!(p, xlabel="x", ylabel = "y", dpi=300, legend=false, xlims=[-0.1,2.1], ylims=[-0.1,1.1])
-    #     # function get_col(inn)
-    #     #     if inn 
-    #     #         return :black 
-    #     #     else 
-    #     #         return :grey
-    #     #     end
-    #     # end
-    #     i1 = 1; i2 = 1
-    #     for xx in lrange
-    #         for yy in lrange
-    #             arrow0!(p, xx, yy, zz1[i1][1], zz1[i1][2], lw=1.5, as=0.3, lc=:black, ec=2.0)
-    #             i1 += 1
-    #         end
-    #         arrow0!(p, 1.0 + xx, 0.5, zz2[i2], 0.0, lw=2, as=0.3, lc=:black, ec=2.0)
-    #         i2 += 1
-    #     end
-
-    # else
 
     if domain.id == "planeline"
         meshstep = 0.4
@@ -208,7 +135,6 @@ function plot_feedback_map!(p, domain::Gluing, plotter::Gluing_plotter, dynamic:
             nextcrossd[ipt] = domain.get_crossing(pt, dir)[1]
         end
     end
-    # nextcrossd = [domain.get_crossing(pt, dir)[1] for (pt,dir) in zip(mesh.points, directions)]
     coords = [plotter.get_plotting_coords(domain, pt.comp, pt) for pt in hmesh.points]
     arrows = [plotter.get_plotting_coords(domain, ncd.comp, ncd) .- co for (co, ncd) in zip(coords, nextcrossd)]
     for arr in arrows 
@@ -216,15 +142,16 @@ function plot_feedback_map!(p, domain::Gluing, plotter::Gluing_plotter, dynamic:
             arr .*= larr / norm(arr)
         end
     end
-    # println("coords : ", coords)
-    # println("arrows : ", arrows)
 
     col = :orangered
     for (co,arr) in zip(coords, arrows)
-        # scatter3d!([[co[i]] for i in 1:3]..., color=:brown, ms=0.5)
         arrow0!(p, co..., arr...; lc=col, ec=2.0, as=0.3, lw=arrlw)
         if norm(arr) <= 1e-5
-            scatter3d!(p, [[co[i]] for i in 1:3]..., color=col, msc=col, msw=0.3, ms=0.8, lw=arrlw)
+            if domain.id == "planeline"
+                scatter!(p, [[co[i]] for i in 1:2]..., color=col, msc=col, msw=0.3, ms=0.8, lw=arrlw)
+            else # if domain.id == "ISS"
+                scatter3d!(p, [[co[i]] for i in 1:3]..., color=col, msc=col, msw=0.3, ms=0.8, lw=arrlw)
+            end
         end
     end
 

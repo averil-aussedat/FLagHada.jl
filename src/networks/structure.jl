@@ -50,22 +50,6 @@ A structure to map a network into a plottable (2D) euclidian space.
 end
 Base.:(==)(n1::Network_plotter, n2::Network_plotter) = n1.junccoords == n2.junccoords
 
-# export Network_convex
-# """
-# $(TYPEDEF)
-
-# Encode a nonempty convex set in a 1D network. 
-
-# """
-# @with_kw struct Network_convex <: Convex 
-#     "Number of extremal points"
-#     thelen::Int
-#     "Extremal points"
-#     points::Vector{NetPoint}
-
-#     Network_convex(points) = new(length(points), points)
-# end
-# Base.:(==)(c1::Network_convex, c2::Network_convex) = (c1.thelen == c2.thelen) && (c1.points == c2.points)
 
 export NetMesh
 @with_kw struct NetMesh <: Mesh

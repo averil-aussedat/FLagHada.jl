@@ -1,5 +1,5 @@
 using Dates 
-using JLD2
+using JLD2 # format of saved files 
 
 @with_kw struct TestCase 
     # immutable part
@@ -43,15 +43,45 @@ using JLD2
 end
 
 """
-    Intended to be a bank of serious test cases.
+    Bank of test cases.
 """
 function get_TestCase(testcaseid::String)
+
+    ##############################
+    # Demos 
+    ##############################
+
+    # params: 
+    #   domaintype      "network", "ellipses" or "gluing" (feel free to add some, requirements in FLagHada.jl)
+    #   domainid        passed to the constructor of the specific type of domain 
+    #   dynamicid       passed to get_Dynamic
+    #   costid          passed to get_Scalar
+    #   scheme          always "SL" for now
+    #   buildV          always "closestN" for now
+    #   T               terminal time, a positive float 
+    #   init            largest  space step for the space mesh, a positive float
+    #   last            smallest space step for the space mesh, a positive float
+    #   number          number of space meshes. Step will be distributed log-uniformly
+    #   exponent        2. For the CFL condition
+    #   fact (opt)      default 1.0, larger = more time steps = smaller Δt
+
+    if (testcaseid == "demo_network")
+
+        return TestCase("network", "tripod", "eikonal", "norm", "SL", "closestN", 0.8, 0.1, 0.01, 5, 2)
+
+    elseif (testcaseid == "demo_ellipses")
+
+        return TestCase("ellipses", "ellctedet", "robustHam", "eigmax", "SL", "closestN", 1.0, 0.7, 0.05, 5, 2)
+    
+    elseif (testcaseid == "demo_gluing")
+
+        return TestCase("gluing", "planeline", "eikonal", "norm", "SL", "closestN", 1.0, 0.1, 0.01, 5, 2)
 
     ##############################
     # Networks
     ##############################
     
-    if (testcaseid == "eikonale_tripod")
+    elseif (testcaseid == "eikonale_tripod")
 
         return TestCase("network", "tripod", "eikonal", "norm", "SL", "closestN", 0.5, 0.05, 0.000005, 100, 2) # big simulation
 
@@ -82,13 +112,10 @@ function get_TestCase(testcaseid::String)
     elseif (testcaseid == "robust")
 
         return TestCase("ellipses", "ellcube", "robust", "eigmax", "SL", "closestN", 1.0, 0.7, 0.03, 10, 2) 
-        # return TestCase("ellipses", "ellcube", "robust", "eigmax", "SL", "closestN", 1.0, 0.7, 0.015, 100, 2)
 
     elseif (testcaseid == "robustHam")
 
-        # return TestCase("ellipses", "ellctedet", "robustHam", "eigmax", "SL", "closestN", 0.3, 0.05, 0.001, 100, 2, 4.0) # big simulation, before correct boundary conditions
-        return TestCase("ellipses", "ellctedet", "robustHam", "eigmax", "SL", "closestN", 0.3, 0.08, 0.005, 100, 2, 6.0) # big simulation, after  correct boundary conditions
-        # return TestCase("ellipses", "ellctedet", "robustHam", "eigmax", "SL", "closestN", 0.3, 0.01, 0.01, 1, 2, 6.0) # big simulation
+        return TestCase("ellipses", "ellctedet", "robustHam", "eigmax", "SL", "closestN", 0.3, 0.08, 0.005, 100, 2, 6.0) # big simulation
 
     ##############################
     # Gluings
@@ -96,20 +123,15 @@ function get_TestCase(testcaseid::String)
 
     elseif (testcaseid == "eikonale_gluing")
 
-        # return TestCase("gluing", "1dsegment", "eikonal", "norm", "SL", "closestN", 0.7, 0.01, 0.0001, 100, 2)
         return TestCase("gluing", "2dsquare", "eikonal", "norm", "SL", "closestN", 0.7, 0.1, 0.001, 10, 2, 2.0)
-        # return TestCase("gluing", "3dcube", "eikonal", "norm", "SL", "closestN", 0.7, 1.0, 0.03, 10, 2)
 
     elseif (testcaseid == "eikonale_planeline")
 
         return TestCase("gluing", "planeline", "eikonal", "norm", "SL", "closestN", 1.0, 0.012, 0.001, 100, 2)
-        # return TestCase("gluing", "planeline", "eikonal", "norm", "SL", "closestN", 1.0, 0.001, 0.001, 1, 2)
 
     elseif (testcaseid == "windrobot_planeline")
 
-        # return TestCase("gluing", "planeline", "windrobot", "distmeteors", "SL", "closestN", 0.6, 0.1, 0.001, 100, 2, 1.5) # first big simulation
-        # return TestCase("gluing", "planeline", "windrobot", "distmeteors", "SL", "closestN", 0.6, 0.05, 0.0005, 100, 2, 1.5) # second big simulation
-        return TestCase("gluing", "planeline", "windrobot", "distmeteors", "SL", "closestN", 1.8, 0.2, 0.002, 100, 2, 1.5) # third big simulation
+        return TestCase("gluing", "planeline", "windrobot", "distmeteors", "SL", "closestN", 1.8, 0.2, 0.002, 100, 2, 1.5) # big simulation
 
     elseif (testcaseid == "eikonale_ISS")
 
@@ -124,13 +146,33 @@ function get_TestCase(testcaseid::String)
     end
 end
 
+"""
+    Return the initial points of trajectories 
+    for the numerical approximation 
+"""
 function get_init_points(testcaseid::String, domain::Domain)
+
+    ##############################
+    # Demos 
+    ##############################
+
+    if (testcaseid == "demo_network")
+
+        return domain.juncpoints
+
+    elseif (testcaseid == "demo_ellipses")
+
+        return [EPoint(domain.alga,domain.beta,domain.alga)]
+
+    elseif (testcaseid == "demo_gluing")
+
+        return [GPoint(2,[1.0])]
 
     ##############################
     # Networks
     ##############################
 
-    if (testcaseid in ["eikonale_tripod", "eikonale_intricate", "tripod_chattering", "sncf_intricate"])
+    elseif (testcaseid in ["eikonale_tripod", "eikonale_intricate", "tripod_chattering", "sncf_intricate"])
 
         return domain.juncpoints
 
@@ -141,19 +183,6 @@ function get_init_points(testcaseid::String, domain::Domain)
     elseif (testcaseid in ["eikonale_ellcube", "eikonale_ellplane"])
 
         return [EPoint(domain.alga,domain.beta,domain.alga)]
-
-    elseif (testcaseid == "robust")
-    # elseif (testcaseid in ["robust", "robustHam"])
-
-        # return [EPoint(0.0,0.0,0.0)]
-        # return [EPoint(2.0.*(rand(3) .- 0.5)...) for _ in 1:10]
-        return [
-            EPoint( 0.0, 0.0, 0.0), 
-            EPoint(-0.5, 0.0, 0.5), 
-            EPoint( 0.5, 0.0,-0.5), 
-            EPoint(-0.3, 0.6, 0.3), 
-            EPoint( 0.2,-0.4,-0.2), 
-        ]
 
     elseif (testcaseid == "robustHam")
 
@@ -177,7 +206,6 @@ function get_init_points(testcaseid::String, domain::Domain)
 
     elseif testcaseid == "windrobot_planeline"
 
-        # return [GPoint(1,[0.0,1.0]), GPoint(1,[0.0,0.0]), GPoint(1,[1.0,0.0]), GPoint(1,[1.0,1.0]), GPoint(2,[0.25])]
         return [GPoint(1,[0.0,4.0]), GPoint(1,[0.0,0.0]), GPoint(1,[4.0,0.0]), GPoint(1,[4.0,4.0]), 
                 GPoint(2,[4.0]), GPoint(1,[2.0, 2.0]), GPoint(1,[4.0, 2.0]), GPoint(2,[2.0])]
 
@@ -198,7 +226,7 @@ function save_testcase(testcase::TestCase, verbose::Bool=false; suffix::String="
     # julia-friendly format 
     save_object("data/$foldername/" * testcase.runid * suffix * ".jld2", testcase) 
 
-    # python-friendly format for ltf... regrets
+    # [whatever-is-not-julia]-friendly format
     open("data/$foldername/" * testcase.runid * suffix * ".txt", "w") do textfile
         # column names 
         write(textfile, "runid"); write(textfile, ("\t"))
@@ -252,27 +280,29 @@ function load_testcase(runid::String, verbose::Bool=false)
     return testcase
 end
 
+# side comment: in the simulations, I use plot_errors_robust instead of plot_errors
+# which can treat outliers. The code is provided in interface.jl, I just do not want to impose LinRegOutliers
 function run_diagnostics(testcase::TestCase, VSL::Bool, uSL::Bool, verbose::Bool=false; suffix::String="")
     foldername = join(split(testcase.runid,"_")[1:2],"_")
     # Errors on the value function 
     if VSL
         verb(verbose, "Plotting error on the value function for test case $(testcase.runid)...")
-        savefig(plot_errors_robust(testcase.dxs, testcase.errorVSL_glob, ["Relative global error on V w.r.t. the space step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_errVSL_dx" * suffix)
-        savefig(plot_errors_robust(testcase.T./testcase.NN, testcase.errorVSL_glob, ["Relative global error on V w.r.t. the time step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_errVSL_dt" * suffix)
+        savefig(plot_errors(testcase.dxs, testcase.errorVSL_glob, ["Relative global error on V w.r.t. the space step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_errVSL_dx" * suffix)
+        savefig(plot_errors(testcase.T./testcase.NN, testcase.errorVSL_glob, ["Relative global error on V w.r.t. the time step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_errVSL_dt" * suffix)
         verb(verbose, "... done.")
     end
 
     if uSL
         verb(verbose, "Plotting error on the optimal trajectory for test case $(testcase.runid)...")
         # Errors on the optimal trajectories
-        savefig(plot_errors_robust(testcase.T./testcase.NN, testcase.erroruSL_lossw, ["Worst-case loss of optimality w.r.t. the time step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_erruSLw_dt" * suffix)
-        savefig(plot_errors_robust(testcase.T./testcase.NN, testcase.erroruSL_percw, ["Worst-case renormalized loss of optimality w.r.t. the time step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_rerruSLw_dt" * suffix)
-        savefig(plot_errors_robust(testcase.T./testcase.NN, testcase.erroruSL_lossm, ["Mean loss of optimality w.r.t. the time step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_erruSLm_dt" * suffix)
-        savefig(plot_errors_robust(testcase.T./testcase.NN, testcase.erroruSL_percm, ["Mean renormalized loss of optimality w.r.t. the time step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_rerruSLm_dt" * suffix)
-        savefig(plot_errors_robust(testcase.dxs,            testcase.erroruSL_lossw, ["Worst-case loss of optimality w.r.t. the space step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_erruSLw_dx" * suffix)
-        savefig(plot_errors_robust(testcase.dxs,            testcase.erroruSL_percw, ["Worst-case renormalized loss of optimality w.r.t. the space step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_rerruSLw_dx" * suffix)
-        savefig(plot_errors_robust(testcase.dxs,            testcase.erroruSL_lossm, ["Mean loss of optimality w.r.t. the space step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_erruSLm_dx" * suffix)
-        savefig(plot_errors_robust(testcase.dxs,            testcase.erroruSL_percm, ["Mean renormalized loss of optimality w.r.t. the space step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_rerruSLm_dx" * suffix)
+        savefig(plot_errors(testcase.T./testcase.NN, testcase.erroruSL_lossw, ["Worst-case loss of optimality w.r.t. the time step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_erruSLw_dt" * suffix)
+        savefig(plot_errors(testcase.T./testcase.NN, testcase.erroruSL_percw, ["Worst-case renormalized loss of optimality w.r.t. the time step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_rerruSLw_dt" * suffix)
+        savefig(plot_errors(testcase.T./testcase.NN, testcase.erroruSL_lossm, ["Mean loss of optimality w.r.t. the time step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_erruSLm_dt" * suffix)
+        savefig(plot_errors(testcase.T./testcase.NN, testcase.erroruSL_percm, ["Mean renormalized loss of optimality w.r.t. the time step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_rerruSLm_dt" * suffix)
+        savefig(plot_errors(testcase.dxs,            testcase.erroruSL_lossw, ["Worst-case loss of optimality w.r.t. the space step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_erruSLw_dx" * suffix)
+        savefig(plot_errors(testcase.dxs,            testcase.erroruSL_percw, ["Worst-case renormalized loss of optimality w.r.t. the space step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_rerruSLw_dx" * suffix)
+        savefig(plot_errors(testcase.dxs,            testcase.erroruSL_lossm, ["Mean loss of optimality w.r.t. the space step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_erruSLm_dx" * suffix)
+        savefig(plot_errors(testcase.dxs,            testcase.erroruSL_percm, ["Mean renormalized loss of optimality w.r.t. the space step, $(testcase.scheme) scheme"], verbose), "data/$foldername/$(testcase.runid)_rerruSLm_dx" * suffix)
         verb(verbose, "... done.")
     end
 end
